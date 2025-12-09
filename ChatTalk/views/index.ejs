@@ -1,11 +1,50 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-  </body>
+
+<head>
+  <title>ChatTalk Test</title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+  <h1>Socket.io Bağlantı Testi</h1>
+  <p>Sunucu durumu için terminalini, tarayıcı durumu için F12 (Console) sekmesini kontrol et.</p>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const MY_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTM4NDAwNTMyMmY5YWIzMzliMmJiZGYiLCJ1c2VyTmFtZSI6InNlbmRlcl9mdXJrYW4iLCJpYXQiOjE3NjUyOTQ2NzQsImV4cCI6MTc2NTg5OTQ3NH0.uGeFoiqrOdD3kjxQdhU0mY_N62iYSXlkNjKqNiOnWzU";
+    
+    const socket = io({
+        auth: {
+          token: MY_TOKEN
+        }
+      });
+
+    socket.on('connect', () => {
+      console.log('✅ Tarayıcı: Sunucuya başarıyla bağlandım!');
+      console.log('🆔 Benim Socket ID\'m:', socket.id);
+
+      const TEST_RECIVER_ID = "69384018322f9ab339b2bbe2";
+      console.log(`📨 Sunucuya özel mesaj gönderiliyor`);
+      socket.emit("sendMessage", {
+        recipientId: TEST_RECIVER_ID,
+        content: "Selam! Bu mesaj Repository katmanından geçip veritabanına yazıldı."
+      });
+    },2000);
+
+    socket.on("sendMessage", (response) => {
+        console.log("✅ BAŞARILI! Sunucu cevabı:", response);
+    });
+    
+    socket.on("connect_error", (err) => {
+        console.log("⛔ Bağlantı Reddedildi (Sunucudan Mesaj):", err.message);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('❌ Tarayıcı: Sunucuyla bağlantı koptu.');
+    });
+  </script>
+</body>
+
 </html>

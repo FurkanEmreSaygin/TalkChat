@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('chattalk:server');
 var http = require('http');
+const socketAuth = require("../middlewares/socketAuth");
 
 /**
  * Get port from environment and store in Express.
@@ -24,6 +25,17 @@ var server = http.createServer(app);
 /**
  * Listen on provided port, on all network interfaces.
  */
+var io = require("socket.io")(server,{
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+app.set("io", io);
+
+io.use(socketAuth);
+require("../sockets/index")(io);
 
 server.listen(port);
 server.on('error', onError);
