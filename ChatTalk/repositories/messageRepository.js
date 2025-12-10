@@ -11,6 +11,14 @@ class MessageRepository {
     return await newMessage.save();
   }
 
+  async getMessagesBetweenUsers(userId1, userId2) {
+    return await Message.find({
+      $or: [
+        { sender: userId1, recipient: userId2 },
+        { sender: userId2, recipient: userId1 },
+      ],
+    }).sort({ createdAt: 1 });
+  }
 }
 
 module.exports = new MessageRepository();
