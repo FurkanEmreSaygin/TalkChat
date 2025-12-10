@@ -36,6 +36,9 @@
     socket.on("sendMessage", (response) => {
         console.log("✅ BAŞARILI! Sunucu cevabı:", response);
     });
+    socket.on("newMessage", (mesajVerisi) => {
+        console.log("🔔 CANLI MESAJ GELDİ!", mesajVerisi);
+    });
     
     socket.on("connect_error", (err) => {
         console.log("⛔ Bağlantı Reddedildi (Sunucudan Mesaj):", err.message);
