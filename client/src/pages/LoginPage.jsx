@@ -21,7 +21,11 @@ export default function LoginPage() {
 
       // 2. Gelen veriyi (Token + User) Context'e kaydet
       // Backend cevabına göre data.token ve user objesini ayarlıyoruz
-      const userData = { _id: data.userId, email: email };
+      const userData = {
+        _id: data.userId,
+        email: email,
+        username: data.userName,
+      };
       login(userData, data.token);
 
       // 3. Sohbet sayfasına yönlendir
