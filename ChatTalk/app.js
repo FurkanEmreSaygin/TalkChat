@@ -4,12 +4,19 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+const cors = require("cors")
 const dotenv = require("dotenv");
 dotenv.config();
 const connectDB = require("./config/db");
 connectDB();
 
 var app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173", 
+  methods: ["GET", "POST", "PUT", "DELETE"], 
+  credentials: true 
+}));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
