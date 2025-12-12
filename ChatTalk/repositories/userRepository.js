@@ -12,7 +12,7 @@ class UserRepository {
         return await newUser.save();
     }
     async getAllUsers() {
-        return await User.find({});
+        return await User.find({}).select("-password -__v");
     }
 }
 

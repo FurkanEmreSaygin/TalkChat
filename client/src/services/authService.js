@@ -8,11 +8,12 @@ const authService = {
   },
 
   // Register İsteği
-  register: async (username, email, password) => {
+  register: async (username, email, password, publicKey) => {
     const response = await api.post("/users/register", {
       username,
       email,
       password,
+      publicKey
     });
     return response.data;
   },
