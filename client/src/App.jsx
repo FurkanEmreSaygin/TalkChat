@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext"; // Context'i çağırdık
 
+import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import ChatPage from "./pages/ChatPage";
 
@@ -13,6 +14,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+          path="/register"
+          element={!token ? <RegisterPage /> : <Navigate to="/chat" />}
+        />
         {/* Eğer Token varsa Chat'e, yoksa Auth sayfasına yönlendir */}
         <Route
           path="/"
