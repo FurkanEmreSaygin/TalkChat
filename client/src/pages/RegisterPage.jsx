@@ -30,7 +30,8 @@ export default function RegisterPage() {
       // 1. KRİPTOGRAFİK İŞLEM BAŞLIYOR 🔐
       // Arka planda (Web Worker) anahtar çifti üretiliyor...
       console.log("Anahtarlar üretiliyor...");
-      const keyPair = await cryptoService.generateKeyPair();
+      const {publicKey, privateKey} = await cryptoService.generateKeyPair();
+      const encryptedPrivateKey = cryptoService.encryptPrivateKey(privateKey, formData.password)
       console.log("Anahtarlar hazır!");
 
       // 2. BACKEND'E KAYIT OL (Public Key ile birlikte)
@@ -38,7 +39,8 @@ export default function RegisterPage() {
         formData.username,
         formData.email,
         formData.password,
-        keyPair.publicKey // <--- Sunucuya giden Asma Kilit
+        publicKey,
+        encryptedPrivateKey
       );
 
       // 3. HEMEN GİRİŞ YAP (Otomatik Login)
@@ -50,13 +52,14 @@ export default function RegisterPage() {
 
       // 4. ÖNEMLİ: PRIVATE KEY'İ SAKLA 🗝️
       // Bunu sunucuya göndermedik, kullanıcının cebine (Local) koyuyoruz.
-      localStorage.setItem("privateKey", keyPair.privateKey);
+      localStorage.setItem("privateKey", privateKey);
 
       // 5. Context'i Güncelle ve Yönlendir
       const userData = {
         _id: loginData.userId,
         email: formData.email,
         username: loginData.userName,
+        publicKey: loginData.publicKey
       };
 
       login(userData, loginData.token);

@@ -2,7 +2,6 @@ const messageRepository = require("../repositories/messageRepository");
 
 exports.getMessagesBetweenUsers = async (req, res) => {
   try {
-    // daha sonra busniess katamanına taşıyabiliriz
 
     const { recipientId } = req.params;
     const senderId = req.user.userId;

@@ -17,14 +17,15 @@ module.exports = (io) => {
     socket.on("sendMessage", async (data) => {
       
       try {
-        const { recipientId, content } = data;
+        const { recipientId, content, senderContent } = data;
 
-        if (!recipientId || !content) return socket.emit("error", {message: "Recipient ID and content are required.",});
+        if (!recipientId || !content || !senderContent) return socket.emit("error", {message: "Recipient ID and content are required.",});
 
         const savedMessage = await messageRepository.createMessage(
           socket.user._id,
           recipientId,
-          content
+          content,
+          senderContent
         );
        
         console.log(`Message saved: ${socket.user.username} -> ${recipientId}`,savedMessage);

@@ -17,26 +17,38 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
 
   const tryDecryptMessage = (msg) => {
-    if (msg.recipient === user._id) {
-      const privateKey = localStorage.getItem("privateKey");
-      if (!privateKey) return "🔑 Özel anahtar bulunamadı";
+    const privateKey = localStorage.getItem("privateKey");
+    if (!privateKey) return "🔑 Özel anahtar bulunamadı";
 
-      const decrypted = cryptoService.decrypt(msg.content, privateKey);
-
-      return decrypted.startsWith("⚠️") ? msg.content : decrypted;
-    }
-
-    if (msg.sender === user._id) {
-      if (msg.content.length > 50 && !msg.content.includes(" ")) {
-        return "🔒 (Şifreli Mesaj - İçeriği sadece alıcı görebilir)";
+    try {
+      if (msg.sender === user._id) {
+        if (msg.senderContent) {
+          const decrypted = cryptoService.decrypt(
+            msg.senderContent,
+            privateKey
+          );
+          return decrypted.startsWith("⚠️") ? "⚠️ Şifre Çözülemedi" : decrypted;
+        }
+        else {
+          if (msg.content.length > 50 && !msg.content.includes(" ")) {
+            return "🔒 (Şifreli Mesaj - Kopyası yok)";
+          }
+          return msg.content;
+        }
       }
-      return msg.content;
-    }
 
-    return msg.content;
+      if (msg.recipient === user._id) {
+        const decrypted = cryptoService.decrypt(msg.content, privateKey);
+        return decrypted.startsWith("⚠️") ? msg.content : decrypted;
+      }
+
+      return msg.content;
+    } catch (error) {
+      console.error("Decryption hatası:", error);
+      return "⚠️ Hata";
+    }
   };
 
-  // 1. KULLANICILARI GETİR
   useEffect(() => {
     userService.getAllUsers().then((data) => {
       setUsers(data.filter((u) => u._id !== user._id));
@@ -82,14 +94,12 @@ export default function ChatPage() {
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, selectedUser]); 
+  }, [socket, selectedUser]);
 
-  // 4. OTOMATİK SCROLL
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 5. MESAJ GÖNDERME (KRİTİK BÖLÜM)
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
@@ -100,11 +110,21 @@ export default function ChatPage() {
       );
       return;
     }
+    if (!user.publicKey) {
+      alert("Senin Public Key'in bulunamadı! Lütfen tekrar giriş yap.");
+      return;
+    }
+    const encryptedForMe = cryptoService.encrypt(newMessage, user.publicKey);
 
     const encryptedContent = cryptoService.encrypt(
       newMessage,
       selectedUser.publicKey
     );
+
+    if (!encryptedContent || !encryptedForMe) {
+      alert("Şifreleme sırasında hata oluştu.");
+      return;
+    }
 
     if (!encryptedContent) {
       alert("Şifreleme sırasında hata oluştu.");
@@ -114,12 +134,13 @@ export default function ChatPage() {
     socket.emit("sendMessage", {
       recipientId: selectedUser._id,
       content: encryptedContent,
+      senderContent: encryptedForMe,
     });
 
     const optimisticMessage = {
       _id: Date.now(),
       sender: user._id,
-      content: newMessage, 
+      content: newMessage,
       createdAt: new Date().toISOString(),
     };
 
