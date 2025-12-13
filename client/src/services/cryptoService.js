@@ -1,4 +1,5 @@
 import forge from "node-forge";
+import CryptoJS from "crypto-js";
 
 const cryptoService = {
   generateKeyPair: async () => {
@@ -49,6 +50,23 @@ const cryptoService = {
 
     }
   },
+  encryptPrivateKey: (privateKeyPem, password) => {
+    return CryptoJS.AES.encrypt(privateKeyPem, password).toString();
+  },
+
+  decryptPrivateKey: (encryptedPrivateKey, password) => {
+    try {
+      
+      const bytes = CryptoJS.AES.decrypt(encryptedPrivateKey, password);
+      const originalKey = bytes.toString(CryptoJS.enc.Utf8);
+      if (!originalKey.startsWith("-----BEGIN RSA")) return null; // Yanlış şifre kontrolü
+      return originalKey;
+
+    } catch (error) {
+      console.error("validation error", error)
+      return null;
+    }
+  }
 };
 
 export default cryptoService;

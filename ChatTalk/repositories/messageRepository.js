@@ -1,11 +1,12 @@
 const Message = require("../models/Message");
 
 class MessageRepository {
-  async createMessage(senderId, recipientId, content) {
+  async createMessage(senderId, recipientId, content, senderContent) {
     const newMessage = new Message({
       sender: senderId,
       recipient: recipientId,
       content: content,
+      senderContent : senderContent
     });
 
     return await newMessage.save();

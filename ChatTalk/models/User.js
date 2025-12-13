@@ -9,7 +9,8 @@ const UserSchema = mongoose.Schema({
     isActive: { type : Boolean , default: true},
     isAdmin: { type : Boolean , default: false},
     // For Encryption Keys
-    publicKey: { type : String , default: ""}
+    publicKey: { type : String , default: ""},
+    encryptedPrivateKey: { type: String, required: true }
 },{
     timestamps: true
 })

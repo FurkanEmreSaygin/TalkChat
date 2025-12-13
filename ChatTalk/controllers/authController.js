@@ -5,7 +5,7 @@ const userRepository = require("../repositories/userRepository");
 exports.register = async (req, res) => {
   const body = req.body;
   try {
-    const { username, email, password, phoneNumber, profilePic, publicKey } =body;
+    const { username, email, password, phoneNumber, profilePic, publicKey, encryptedPrivateKey } =body;
     //sonradan busniess logice tasinacak
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(password, salt);
@@ -17,6 +17,7 @@ exports.register = async (req, res) => {
       phoneNumber: phoneNumber || "",
       profilePic: profilePic || "",
       publicKey: publicKey || "DUMMY_PUBLIC_KEY_WAITING_FOR_FRONTEND",
+      encryptedPrivateKey: encryptedPrivateKey,
     });
 
     res.status(201).json({ message: "User registered successfully" });
@@ -42,15 +43,17 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) return res.status(400).json({ error: "Invalid email or password" });
 
     // Successful login
-    const payload = {userId :user._id , userName: user.userName};
+    const payload = {userId: user._id, userName: user.userName};
     const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRES_IN});
 
     res.status(200).json({
       message: "Login successful",
       token: token,
-      userId : user._id,
-      userName: user.userName
-    })
+      encryptedPrivateKey: user.encryptedPrivateKey,
+      userId: user._id,
+      userName: user.userName,
+      publicKey: user.publicKey
+    });
 
   } catch (error) {
         console.error("Register Error:", error);

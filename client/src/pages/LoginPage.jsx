@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import authService from "../services/authService";
 import { useNavigate } from "react-router-dom";
+import cryptoService from "../services/cryptoService"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -19,19 +20,32 @@ export default function LoginPage() {
       // 1. Backend'e sor
       const data = await authService.login(email, password);
 
-      // 2. Gelen veriyi (Token + User) Context'e kaydet
-      // Backend cevabına göre data.token ve user objesini ayarlıyoruz
+
+      if (data.encryptedPrivateKey) {
+        // 1. Paketi kullanıcının girdiği şifreyle aç
+        const privateKey = cryptoService.decryptPrivateKey(
+          data.encryptedPrivateKey,
+          password
+        );
+
+        if (privateKey) {
+          // 2. Anahtarı yerine koy! 🎉
+          localStorage.setItem("privateKey", privateKey);
+        } else {
+          alert("Anahtar çözülemedi! Şifre yanlış olabilir mi?"); // Teorik olarak login geçtiyse bu olmaz
+        }
+      }
+
       const userData = {
         _id: data.userId,
         email: email,
         username: data.userName,
+        publicKey: data.publicKey,
       };
       login(userData, data.token);
 
-      // 3. Sohbet sayfasına yönlendir
       navigate("/chat");
     } catch (err) {
-      // Hata varsa ekrana yazdır (Backend'den gelen mesaj veya genel hata)
       setError(err.response?.data?.error || "Giriş başarısız!");
     }
   };
