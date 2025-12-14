@@ -1,18 +1,13 @@
-const messageRepository = require("../repositories/messageRepository");
+const messageService = require("../services/messageService.js")
+const catchAsync = require("../utils/catchAsync");
 
 exports.getMessagesBetweenUsers = async (req, res) => {
   try {
 
     const { recipientId } = req.params;
-    const senderId = req.user.userId;
+    const oldMessages = await messageService.getMessagesBetweenUsers( req.user.userId, recipientId);
 
-    console.log(`Mesajlar getiriliyor... Gönderen: ${senderId}, Alıcı: ${recipientId}`);
-    
-    const oldMessages = await messageRepository.getMessagesBetweenUsers(
-      senderId,
-      recipientId
-    );
-
+    console.log(oldMessages)
     res.status(200).json(oldMessages || []);
 
   } catch (error) {

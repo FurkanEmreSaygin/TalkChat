@@ -1,63 +1,32 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const userRepository = require("../repositories/userRepository");
+const authService = require("../services/authService");
+const userRepository = require("../repositories/userRepository")
+
+
 
 exports.register = async (req, res) => {
   const body = req.body;
   try {
-    const { username, email, password, phoneNumber, profilePic, publicKey, encryptedPrivateKey } =body;
-    //sonradan busniess logice tasinacak
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-
-    await userRepository.createUser({
-      userName: username,
-      email: email,
-      password: hashedPassword,
-      phoneNumber: phoneNumber || "",
-      profilePic: profilePic || "",
-      publicKey: publicKey || "DUMMY_PUBLIC_KEY_WAITING_FOR_FRONTEND",
-      encryptedPrivateKey: encryptedPrivateKey,
-    });
-
+    await authService.register(body)
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-
-    console.error("Register Error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-
+    console.error("Register Error:", error)
+    res.status(500).json({ error: error.message });
   }
 };
 
 exports.login = async (req, res) => {
   const {email, password} = req.body;
-  //sonradan busniess logice tasinacak
   try {
-
-    const user = await userRepository.findUserByEmail(email);
-    
-    if (!user) return res.status(400).json({ error: "Invalid email or password" });
-
-   // Validate password
-    const isPasswordValid = await bcrypt.compare(password, user.password)
-    if (!isPasswordValid) return res.status(400).json({ error: "Invalid email or password" });
-
-    // Successful login
-    const payload = {userId: user._id, userName: user.userName};
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRES_IN});
-
+    const result = await authService.login(email, password)
     res.status(200).json({
-      message: "Login successful",
-      token: token,
-      encryptedPrivateKey: user.encryptedPrivateKey,
-      userId: user._id,
-      userName: user.userName,
-      publicKey: user.publicKey
-    });
+      message: "Login Successful",
+      ...result
+    })
 
   } catch (error) {
-        console.error("Register Error:", error);
-        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    console.error("Login Error:", error);
+    const statusCode = error.message === "Geçersiz şifre." || error.message === "Kullanıcı bulunamadı." ? 400 : 500;
+    res.status(statusCode).json({ error: error.message });
   }
 }
 
