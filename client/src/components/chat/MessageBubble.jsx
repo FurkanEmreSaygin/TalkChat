@@ -1,6 +1,12 @@
 import React from "react";
+import toast from "react-hot-toast";
 
 const MessageBubble = ({ message, isMe }) => {
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    toast.success("Mesaj kopyalandı! 📋");
+  };
   // Tarih formatlama
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString([], {
@@ -12,11 +18,13 @@ const MessageBubble = ({ message, isMe }) => {
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-4`}>
       <div
-        className={`max-w-xs px-4 py-2 rounded-lg shadow break-words ${
+        onClick={handleCopy} // Tıklama olayını ekle
+        className={`max-w-xs px-4 py-2 rounded-lg shadow break-words cursor-pointer active:scale-95 transition-transform ${
           isMe
-            ? "bg-blue-500 text-white rounded-br-none" // Gönderen (Biz)
-            : "bg-white text-gray-800 rounded-bl-none" // Alıcı (Karşı Taraf)
+            ? "bg-blue-500 text-white rounded-br-none hover:bg-blue-600"
+            : "bg-white text-gray-800 rounded-bl-none hover:bg-gray-50"
         }`}
+        title="Kopyalamak için tıkla" // Mouse üzerine gelince ipucu
       >
         <p className="text-sm">{message.content}</p>
         <span

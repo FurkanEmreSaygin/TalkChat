@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import messageService from "../services/messageService";
 import cryptoService from "../services/cryptoService";
+import toast from "react-hot-toast";
 
 export const useChat = (socket, currentUser, selectedUser) => {
   const [messages, setMessages] = useState([]);
@@ -79,8 +80,20 @@ export const useChat = (socket, currentUser, selectedUser) => {
   }, [socket, selectedUser]);
 
   const sendMessage = (text) => {
-    if (!selectedUser || !currentUser.publicKey || !selectedUser.publicKey) {
-      console.error("Anahtar eksik");
+    if (!selectedUser) {
+      toast.error("Lütfen bir kullanıcı seçin!");
+      return;
+    }
+    if (!currentUser.publicKey) {
+      toast.error(
+        "Sizin şifreleme anahtarınız eksik! Lütfen tekrar giriş yapın."
+      );
+      return;
+    }
+    if (!selectedUser.publicKey) {
+      toast.error(
+        `${selectedUser.userName} kişisinin açık anahtarı yok. Mesaj gönderilemez!`
+      );
       return;
     }
 
@@ -89,6 +102,11 @@ export const useChat = (socket, currentUser, selectedUser) => {
       text,
       selectedUser.publicKey
     );
+
+    if (!encryptedForMe || !encryptedForRecipient) {
+      toast.error("Mesaj şifrelenirken bir hata oluştu!");
+      return;
+    }
 
     socket.emit("sendMessage", {
       recipientId: selectedUser._id,
