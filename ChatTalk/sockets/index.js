@@ -13,7 +13,7 @@ module.exports = (io) => {
     console.log(`👤 User Connected: ${socket.user.username} (Socket ID: ${socket.id})`);
     console.log(`✅ User Online: ${socket.user.username}`);
     console.log(`📊 Aktif Kullanıcı Sayısı: ${onlineUsers.size}`);
-
+    io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
     socket.on("sendMessage", async (data) => {
       
       try {
@@ -29,6 +29,8 @@ module.exports = (io) => {
         );
        
         console.log(`Message saved: ${socket.user.username} -> ${recipientId}`,savedMessage);
+
+        
 
         socket.emit("messageSent", {success: true,message: savedMessage})
         
@@ -53,6 +55,7 @@ module.exports = (io) => {
       console.log(`👤 User Disconnected: ${socket.user.username} (Socket ID: ${socket.id})`);
       console.log(`❌ User Offline: ${socket.user.username}`);
       console.log(`📊 Aktif Kullanıcı Sayısı: ${onlineUsers.size}`);
+      io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
     })
   });
 };
