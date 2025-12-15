@@ -25,8 +25,22 @@ export default function ChatPage() {
 
   // 4. CUSTOM HOOK  
   const { messages, sendMessage } = useChat(socket, user, selectedUser);
-
+  // 4,5 online users
+  const [onlineUsers, setOnlineUsers] = useState([]);
   // 5. Kullanıcı Listesini Getir (Sayfa açılınca)
+  useEffect(() => {
+    if (!socket) return;
+
+    // Sunucudan "getOnlineUsers" gelirse listeyi güncelle
+    socket.on("getOnlineUsers", (users) => {
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      socket.off("getOnlineUsers");
+    };
+  }, [socket]);
+
   useEffect(() => {
     userService.getAllUsers().then((data) => {
       // Kendimiz hariç diğer kullanıcıları listeye koy
@@ -46,6 +60,7 @@ export default function ChatPage() {
       <Sidebar
         currentUser={user}
         users={users}
+        onlineUsers={onlineUsers} 
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}
         onLogout={logout}
