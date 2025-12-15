@@ -12,18 +12,13 @@ export const useChat = (socket, currentUser, selectedUser) => {
 
     try {
       if (msg.sender === currentUser._id) {
+        
         if (msg.senderContent) {
-          const decrypted = cryptoService.decrypt(
-            msg.senderContent,
-            privateKey
-          );
-          return decrypted?.startsWith("⚠️")
-            ? "⚠️ Şifre Çözülemedi"
-            : decrypted;
+          const decrypted = cryptoService.decrypt( msg.senderContent, privateKey );
+          return decrypted?.startsWith("⚠️") ? "⚠️ Şifre Çözülemedi": decrypted;
         }
-        return msg.content.length > 50 && !msg.content.includes(" ")
-          ? "🔒 (Şifreli)"
-          : msg.content;
+
+        return msg.content.length > 50 && !msg.content.includes(" ") ? "🔒 (Şifreli)" : msg.content;
       }
 
       if (msg.recipient === currentUser._id) {
@@ -32,6 +27,7 @@ export const useChat = (socket, currentUser, selectedUser) => {
       }
 
       return msg.content;
+
     } catch (error) {
       return "⚠️ Hata";
     }
@@ -48,10 +44,7 @@ export const useChat = (socket, currentUser, selectedUser) => {
         const history = await messageService.getMessages(selectedUser._id);
         const rawMessages = history.messages || history || [];
 
-        const processedMessages = rawMessages.map((msg) => ({
-          ...msg,
-          content: tryDecryptMessage(msg),
-        }));
+        const processedMessages = rawMessages.map((msg) => ({ ...msg, content: tryDecryptMessage(msg) }));
 
         setMessages(processedMessages);
       } catch (err) {
@@ -68,10 +61,7 @@ export const useChat = (socket, currentUser, selectedUser) => {
     const handleNewMessage = (message) => {
       if (message.sender === selectedUser._id) {
         const decryptedContent = tryDecryptMessage(message);
-        setMessages((prev) => [
-          ...prev,
-          { ...message, content: decryptedContent },
-        ]);
+        setMessages((prev) => [ ...prev, { ...message, content: decryptedContent }]);
       }
     };
 
@@ -85,23 +75,16 @@ export const useChat = (socket, currentUser, selectedUser) => {
       return;
     }
     if (!currentUser.publicKey) {
-      toast.error(
-        "Sizin şifreleme anahtarınız eksik! Lütfen tekrar giriş yapın."
-      );
+      toast.error( "Sizin şifreleme anahtarınız eksik! Lütfen tekrar giriş yapın.");
       return;
     }
     if (!selectedUser.publicKey) {
-      toast.error(
-        `${selectedUser.userName} kişisinin açık anahtarı yok. Mesaj gönderilemez!`
-      );
+      toast.error(`${selectedUser.userName} kişisinin açık anahtarı yok. Mesaj gönderilemez!`);
       return;
     }
 
     const encryptedForMe = cryptoService.encrypt(text, currentUser.publicKey);
-    const encryptedForRecipient = cryptoService.encrypt(
-      text,
-      selectedUser.publicKey
-    );
+    const encryptedForRecipient = cryptoService.encrypt(text, selectedUser.publicKey );
 
     if (!encryptedForMe || !encryptedForRecipient) {
       toast.error("Mesaj şifrelenirken bir hata oluştu!");

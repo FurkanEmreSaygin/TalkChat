@@ -27,14 +27,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. KRİPTOGRAFİK İŞLEM BAŞLIYOR 🔐
-      // Arka planda (Web Worker) anahtar çifti üretiliyor...
       console.log("Anahtarlar üretiliyor...");
       const {publicKey, privateKey} = await cryptoService.generateKeyPair();
       const encryptedPrivateKey = cryptoService.encryptPrivateKey(privateKey, formData.password)
       console.log("Anahtarlar hazır!");
 
-      // 2. BACKEND'E KAYIT OL (Public Key ile birlikte)
       await authService.register(
         formData.username,
         formData.email,
@@ -43,18 +40,13 @@ export default function RegisterPage() {
         encryptedPrivateKey
       );
 
-      // 3. HEMEN GİRİŞ YAP (Otomatik Login)
-      // Kayıt bitti, token almak için login oluyoruz
       const loginData = await authService.login(
         formData.email,
         formData.password
       );
 
-      // 4. ÖNEMLİ: PRIVATE KEY'İ SAKLA 🗝️
-      // Bunu sunucuya göndermedik, kullanıcının cebine (Local) koyuyoruz.
       localStorage.setItem("privateKey", privateKey);
-
-      // 5. Context'i Güncelle ve Yönlendir
+      
       const userData = {
         _id: loginData.userId,
         email: formData.email,

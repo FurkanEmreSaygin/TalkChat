@@ -38,6 +38,7 @@ class AuthService {
           userName: user.userName,
           email: user.email,
           publicKey: user.publicKey,
+          profilePic: user.profilePic || "", 
           encryptedPrivateKey: user.encryptedPrivateKey,
         };
     }

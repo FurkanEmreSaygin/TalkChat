@@ -1,7 +1,21 @@
 const authService = require("../services/authService");
 const userRepository = require("../repositories/userRepository")
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId; 
+    const { profilePic } = req.body; 
+    const updatedUser = await userRepository.updateUser(userId, profilePic)
 
+    res.status(200).json({
+      message: "Profil başarıyla güncellendi",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update Error:", error);
+    res.status(500).json({ error: "Güncelleme sırasında hata oluştu." });
+  }
+};
 
 exports.register = async (req, res) => {
   const body = req.body;

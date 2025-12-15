@@ -53,6 +53,9 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const getAvatar = (u) => u?.profilePic || u?.avatar;
+  const getName = (u) => u?.userName || u?.username || "User";
+  
   // --- RENDER ---
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -60,7 +63,7 @@ export default function ChatPage() {
       <Sidebar
         currentUser={user}
         users={users}
-        onlineUsers={onlineUsers} 
+        onlineUsers={onlineUsers}
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}
         onLogout={logout}
@@ -70,16 +73,24 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col h-full relative">
         {selectedUser ? (
           <>
-            {/* Sohbet Başlığı (Header) */}
+            {/* --- HEADER (DÜZELTİLEN KISIM) --- */}
             <div className="p-4 bg-white border-b shadow-sm flex items-center shrink-0 z-10">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold mr-3 text-lg">
-                {selectedUser.userName
-                  ? selectedUser.userName[0].toUpperCase()
-                  : "?"}
+              {/* Header Avatarı */}
+              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold mr-3 text-lg overflow-hidden border border-indigo-200">
+                {getAvatar(selectedUser) ? (
+                  <img
+                    src={getAvatar(selectedUser)}
+                    alt="User"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  getName(selectedUser)[0].toUpperCase()
+                )}
               </div>
+
               <div>
                 <h2 className="text-lg font-bold text-gray-800">
-                  {selectedUser.userName}
+                  {getName(selectedUser)}
                 </h2>
                 <div className="flex items-center text-xs text-green-600 font-medium">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>

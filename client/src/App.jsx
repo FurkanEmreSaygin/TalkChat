@@ -5,6 +5,7 @@ import { AuthContext } from "./context/AuthContext"; // Context'i çağırdık
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import ChatPage from "./pages/ChatPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   const { token, loading } = useContext(AuthContext);
@@ -35,6 +36,10 @@ function App() {
         <Route
           path="/chat"
           element={token ? <ChatPage /> : <Navigate to="/auth" />}
+        />
+        <Route
+          path="/profile"
+          element={token ? <ProfilePage /> : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>

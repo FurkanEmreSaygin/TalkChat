@@ -41,6 +41,7 @@ export default function LoginPage() {
         email: email,
         username: data.userName,
         publicKey: data.publicKey,
+        profilePic: data.profilePic || data.avatar || "",
       };
       login(userData, data.token);
 
@@ -100,9 +101,12 @@ export default function LoginPage() {
 
         <p className="mt-4 text-sm text-center text-gray-600">
           Hesabın yok mu?{" "}
-          <span className="text-blue-500 cursor-pointer hover:underline">
+          <button
+            onClick={() => navigate("/register")} // Direkt tıklayınca çalışır
+            className="text-blue-500 cursor-pointer hover:underline"
+          >
             Kayıt Ol
-          </span>
+          </button>
         </p>
       </div>
     </div>
