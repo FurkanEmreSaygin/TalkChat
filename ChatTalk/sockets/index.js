@@ -10,8 +10,8 @@ module.exports = (io) => {
     const userId = socket.user._id.toString();
     onlineUsers.set(userId, socket.id);
     
-    console.log(`👤 User Connected: ${socket.user.username} (Socket ID: ${socket.id})`);
-    console.log(`✅ User Online: ${socket.user.username}`);
+    console.log(`👤 User Connected: ${socket.user.userName} (Socket ID: ${socket.id})`);
+    console.log(`✅ User Online: ${socket.user.userName}`);
     console.log(`📊 Aktif Kullanıcı Sayısı: ${onlineUsers.size}`);
     io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
     socket.on("sendMessage", async (data) => {
@@ -49,11 +49,33 @@ module.exports = (io) => {
         socket.emit("error", {message: "An error occurred while sending the message.",});
       }
     });
+    socket.on("sendFriendRequest", ({ recipientId }) => {
+      const recipientSocketId = onlineUsers.get(recipientId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("newFriendRequest", {
+          senderId: userId,
+          senderName: socket.user.userName,
+          senderPic: socket.user.profilePic || socket.user.avatar
+        });
+        console.log(`🔔 İstek iletildi: ${socket.user.username} -> ${recipientId}`);
+      }
+    });
 
+    socket.on("acceptFriendRequest", ({ senderId }) => {
+        const senderSocketId = onlineUsers.get(senderId);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("friendRequestAccepted", {
+                accepterId: userId,
+                accepterName: socket.user.userName,
+                accepterPic: socket.user.profilePic || socket.user.avatar
+            });
+        }
+    });
     socket.on("disconnect", () => {
       onlineUsers.delete(userId);
-      console.log(`👤 User Disconnected: ${socket.user.username} (Socket ID: ${socket.id})`);
-      console.log(`❌ User Offline: ${socket.user.username}`);
+      console.log(`👤 User Disconnected: ${socket.user.userName} (Socket ID: ${socket.id})`);
+      console.log(`❌ User Offline: ${socket.user.userName}`);
       console.log(`📊 Aktif Kullanıcı Sayısı: ${onlineUsers.size}`);
       io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
     })
