@@ -10,7 +10,8 @@ const UserSchema = mongoose.Schema({
     isAdmin: { type : Boolean , default: false},
     // For Encryption Keys
     publicKey: { type : String , default: ""},
-    encryptedPrivateKey: { type: String, required: true }
+    encryptedPrivateKey: { type: String, required: true },
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref:"User"}]
 },{
     timestamps: true
 })

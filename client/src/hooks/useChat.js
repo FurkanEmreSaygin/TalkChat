@@ -6,19 +6,25 @@ import toast from "react-hot-toast";
 export const useChat = (socket, currentUser, selectedUser) => {
   const [messages, setMessages] = useState([]);
 
+  // --- ŞİFRE ÇÖZME ---
   const tryDecryptMessage = (msg) => {
     const privateKey = localStorage.getItem("privateKey");
     if (!privateKey) return "🔑 Özel anahtar bulunamadı";
 
     try {
       if (msg.sender === currentUser._id) {
-        
         if (msg.senderContent) {
-          const decrypted = cryptoService.decrypt( msg.senderContent, privateKey );
-          return decrypted?.startsWith("⚠️") ? "⚠️ Şifre Çözülemedi": decrypted;
+          const decrypted = cryptoService.decrypt(
+            msg.senderContent,
+            privateKey
+          );
+          return decrypted?.startsWith("⚠️")
+            ? "⚠️ Şifre Çözülemedi"
+            : decrypted;
         }
-
-        return msg.content.length > 50 && !msg.content.includes(" ") ? "🔒 (Şifreli)" : msg.content;
+        return msg.content.length > 50 && !msg.content.includes(" ")
+          ? "🔒 (Şifreli)"
+          : msg.content;
       }
 
       if (msg.recipient === currentUser._id) {
@@ -27,12 +33,12 @@ export const useChat = (socket, currentUser, selectedUser) => {
       }
 
       return msg.content;
-
     } catch (error) {
       return "⚠️ Hata";
     }
   };
 
+  // --- MESAJLARI ÇEKME ---
   useEffect(() => {
     if (!selectedUser) {
       setMessages([]);
@@ -44,7 +50,10 @@ export const useChat = (socket, currentUser, selectedUser) => {
         const history = await messageService.getMessages(selectedUser._id);
         const rawMessages = history.messages || history || [];
 
-        const processedMessages = rawMessages.map((msg) => ({ ...msg, content: tryDecryptMessage(msg) }));
+        const processedMessages = rawMessages.map((msg) => ({
+          ...msg,
+          content: tryDecryptMessage(msg),
+        }));
 
         setMessages(processedMessages);
       } catch (err) {
@@ -55,13 +64,17 @@ export const useChat = (socket, currentUser, selectedUser) => {
     fetchMessages();
   }, [selectedUser, currentUser]);
 
+  // --- MESAJ DİNLEME (SOCKET) ---
   useEffect(() => {
     if (!socket || !selectedUser) return;
 
     const handleNewMessage = (message) => {
       if (message.sender === selectedUser._id) {
         const decryptedContent = tryDecryptMessage(message);
-        setMessages((prev) => [ ...prev, { ...message, content: decryptedContent }]);
+        setMessages((prev) => [
+          ...prev,
+          { ...message, content: decryptedContent },
+        ]);
       }
     };
 
@@ -69,22 +82,30 @@ export const useChat = (socket, currentUser, selectedUser) => {
     return () => socket.off("newMessage", handleNewMessage);
   }, [socket, selectedUser]);
 
+  // --- MESAJ GÖNDERME ---
   const sendMessage = (text) => {
     if (!selectedUser) {
       toast.error("Lütfen bir kullanıcı seçin!");
       return;
     }
     if (!currentUser.publicKey) {
-      toast.error( "Sizin şifreleme anahtarınız eksik! Lütfen tekrar giriş yapın.");
+      toast.error(
+        "Sizin şifreleme anahtarınız eksik! Lütfen tekrar giriş yapın."
+      );
       return;
     }
     if (!selectedUser.publicKey) {
-      toast.error(`${selectedUser.userName} kişisinin açık anahtarı yok. Mesaj gönderilemez!`);
+      toast.error(
+        `${selectedUser.userName} kişisinin açık anahtarı yok. Mesaj gönderilemez!`
+      );
       return;
     }
 
     const encryptedForMe = cryptoService.encrypt(text, currentUser.publicKey);
-    const encryptedForRecipient = cryptoService.encrypt(text, selectedUser.publicKey );
+    const encryptedForRecipient = cryptoService.encrypt(
+      text,
+      selectedUser.publicKey
+    );
 
     if (!encryptedForMe || !encryptedForRecipient) {
       toast.error("Mesaj şifrelenirken bir hata oluştu!");
@@ -106,6 +127,29 @@ export const useChat = (socket, currentUser, selectedUser) => {
 
     setMessages((prev) => [...prev, optimisticMessage]);
   };
+  // --- Friends Request ---
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewRequest = (data) => {
+      toast.success(`👋 ${data.senderName} sana arkadaşlık isteği gönderdi!`, {
+        duration: 5000,
+        icon: "📩",
+      });
+    };
+
+    const handleRequestAccepted = (data) => {
+      toast.success(`✅ ${data.accepterName} arkadaşlık isteğini kabul etti!`);
+    };
+
+    socket.on("newFriendRequest", handleNewRequest);
+    socket.on("friendRequestAccepted", handleRequestAccepted);
+
+    return () => {
+      socket.off("newFriendRequest", handleNewRequest);
+      socket.off("friendRequestAccepted", handleRequestAccepted);
+    };
+  }, [socket]);
 
   return { messages, sendMessage };
 };
