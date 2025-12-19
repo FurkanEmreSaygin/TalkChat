@@ -42,14 +42,27 @@ export default function ChatPage() {
     loadFriends();
   }, [user?._id]);
 
-  // 1. ONLINE LİSTESİNİ DİNLE
-  useEffect(() => {
+  
+useEffect(() => {
     if (!socket) return;
-    socket.on("getOnlineUsers", (users) => {
-      setOnlineUsers(users);
+
+    socket.on("getOnlineFriends", (onlineFriendIds) => {
+      setOnlineUsers(onlineFriendIds);
     });
+
+    socket.on("friendStatusUpdate", ({ userId, status }) => {
+      setOnlineUsers((prev) => {
+        if (status === "online") {
+          return prev.includes(userId) ? prev : [...prev, userId];
+        } else {
+          return prev.filter((id) => id !== userId);
+        }
+      });
+    });
+
     return () => {
-      socket.off("getOnlineUsers");
+      socket.off("getOnlineFriends");
+      socket.off("friendStatusUpdate");
     };
   }, [socket]);
   
