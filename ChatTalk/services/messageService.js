@@ -11,5 +11,8 @@ const messageRepository = require("../repositories/messageRepository");
 
             return oldMessages
         }
+        async markAsRead(senderId, recipientId){
+            return await messageRepository.markAsRead(senderId, recipientId);
+        }
     }
 module.exports = new MessageService();
