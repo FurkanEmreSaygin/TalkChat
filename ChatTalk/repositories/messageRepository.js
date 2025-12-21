@@ -1,12 +1,13 @@
 const Message = require("../models/Message");
 
 class MessageRepository {
-  async createMessage(senderId, recipientId, content, senderContent) {
+  async createMessage(senderId, recipientId, content, senderContent, type = "text") {
     const newMessage = new Message({
       sender: senderId,
       recipient: recipientId,
       content: content,
-      senderContent : senderContent
+      senderContent: senderContent,
+      type: type,
     });
 
     return await newMessage.save();
@@ -19,6 +20,9 @@ class MessageRepository {
         { sender: userId2, recipient: userId1 },
       ],
     }).sort({ createdAt: 1 });
+  }
+  async markAsRead(senderId, recipientId) {
+    return await Message.updateMany({ sender: senderId, recipient: recipientId, isRead: false }, { $set: { isRead: true } });
   }
 }
 

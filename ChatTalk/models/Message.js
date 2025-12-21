@@ -5,6 +5,11 @@ const messageSchema = new mongoose.Schema({
     recipient: { type : mongoose.Schema.Types.ObjectId, ref: "User", required: true},
     content: { type: String, required: true},
     senderContent: {type: String, required: true },
+    type: {
+        type: String,
+        enum: ['text', 'image', 'file'],
+        default: 'text'
+    },
     isRead: { type: Boolean, default: false},
 },{
     timestamps: true
