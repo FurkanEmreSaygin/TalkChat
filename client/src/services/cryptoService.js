@@ -17,6 +17,7 @@ const cryptoService = {
     });
   },
 
+  
   encrypt: (message, publicKeyPem) => {
     try {
 
@@ -67,6 +68,7 @@ const cryptoService = {
       return null;
     }
   }
+  
 };
 
 export default cryptoService;

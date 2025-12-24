@@ -1,12 +1,9 @@
 import { useState, useContext, useEffect, useRef } from "react";
-
-// --- Context ve Servisler ---
 import { AuthContext } from "../context/AuthContext";
 import { SocketContext } from "../context/SocketContext";
-import friendService from "../services/friendService"; 
-
-// --- Hook & Components ---
 import { useChat } from "../hooks/useChat";
+import { useFriends } from "../hooks/useFriends";
+
 import Sidebar from "../components/chat/Sidebar";
 import MessageInput from "../components/chat/MessageInput";
 import MessageBubble from "../components/chat/MessageBubble";
@@ -15,92 +12,40 @@ export default function ChatPage() {
   const { user, logout } = useContext(AuthContext);
   const { socket } = useContext(SocketContext);
 
-  const [users, setUsers] = useState([]); // Arkadaş listesi
   const [selectedUser, setSelectedUser] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-
   const messagesEndRef = useRef(null);
 
-  // Hook kullanımı
+  // --- 1. ARKADAŞLARI VE İSTEKLERİ YÖNETEN HOOK ---
+  const { users, onlineUsers, pendingRequests, loadFriends, acceptRequest } = useFriends(user, socket);
+
+  // --- 2. MESAJLAŞMAYI YÖNETEN HOOK ---
   const { messages, sendMessage } = useChat(socket, user, selectedUser);
 
-  const loadFriends = async () => {
-    if (!user?._id) return;
-    try {
-      const data = await friendService.getFriends();
-      const friendList = data.friends || data || [];
-
-      if (Array.isArray(friendList)) {
-        setUsers(friendList);
-      }
-    } catch (error) {
-      console.error("Liste yenilenemedi", error);
-    }
-  };
-
-  useEffect(() => {
-    loadFriends();
-  }, [user?._id]);
-
-  
-useEffect(() => {
-    if (!socket) return;
-
-    socket.on("getOnlineFriends", (onlineFriendIds) => {
-      setOnlineUsers(onlineFriendIds);
-    });
-
-    socket.on("friendStatusUpdate", ({ userId, status }) => {
-      setOnlineUsers((prev) => {
-        if (status === "online") {
-          return prev.includes(userId) ? prev : [...prev, userId];
-        } else {
-          return prev.filter((id) => id !== userId);
-        }
-      });
-    });
-
-    return () => {
-      socket.off("getOnlineFriends");
-      socket.off("friendStatusUpdate");
-    };
-  }, [socket]);
-  
-  // Friends request accepted
-  useEffect(() => {
-  if (!socket) return;
-
-  // Biri isteğimi kabul ederse listemi yenile
-  socket.on("friendRequestAccepted", () => {
-    loadFriends();
-  });
-
-  return () => {
-    socket.off("friendRequestAccepted");
-  };
-  }, [socket]);
-
-  // 3. Mesaj gelince kaydır
+  // Otomatik Scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Yardımcılar
   const getAvatar = (u) => u?.profilePic || u?.avatar;
   const getName = (u) => u?.userName || u?.username || "User";
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* SOL TARA (Sidebar) */}
+      {/* SOL TARAF */}
       <Sidebar
         currentUser={user}
-        users={users} // Artık buraya sadece Arkadaşlar gidiyor
+        users={users}
         onlineUsers={onlineUsers}
+        pendingRequests={pendingRequests}
+        onAcceptRequest={acceptRequest}
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}
         onLogout={logout}
+        onFriendAdded={loadFriends}
       />
 
-      {/* SAĞ TARAF (Chat) */}
+      {/* SAĞ TARAF */}
       <div className="flex-1 flex flex-col h-full relative">
         {selectedUser ? (
           <>
@@ -108,19 +53,13 @@ useEffect(() => {
             <div className="p-4 bg-white border-b shadow-sm flex items-center shrink-0 z-10">
               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold mr-3 text-lg overflow-hidden border border-indigo-200">
                 {getAvatar(selectedUser) ? (
-                  <img
-                    src={getAvatar(selectedUser)}
-                    alt="User"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={getAvatar(selectedUser)} alt="User" className="w-full h-full object-cover" />
                 ) : (
                   getName(selectedUser)[0].toUpperCase()
                 )}
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-800">
-                  {getName(selectedUser)}
-                </h2>
+                <h2 className="text-lg font-bold text-gray-800">{getName(selectedUser)}</h2>
                 <div className="flex items-center text-xs text-green-600 font-medium">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
                   Uçtan Uca Şifreli
@@ -131,11 +70,7 @@ useEffect(() => {
             {/* Mesajlar */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#efeae2]">
               {messages.map((msg, index) => (
-                <MessageBubble
-                  key={index}
-                  message={msg}
-                  isMe={msg.sender === user._id}
-                />
+                <MessageBubble key={index} message={msg} isMe={msg.sender === user._id} />
               ))}
               <div ref={messagesEndRef} />
             </div>
@@ -150,9 +85,7 @@ useEffect(() => {
               <span className="text-4xl">🔒</span>
             </div>
             <h3 className="text-2xl font-bold text-gray-700">Güvenli Sohbet</h3>
-            <p className="mt-2 text-sm text-gray-400">
-              Mesajlaşmaya başlamak için soldan bir kişi seç.
-            </p>
+            <p className="mt-2 text-sm text-gray-400">Mesajlaşmaya başlamak için soldan bir kişi seç.</p>
           </div>
         )}
       </div>

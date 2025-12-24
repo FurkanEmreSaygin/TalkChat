@@ -1,87 +1,19 @@
-import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import authService from "../services/authService";
-import cryptoService from "../services/cryptoService"; // <--- Yeni Kasa Dairemiz
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useRegister } from "../hooks/useRegister"; // Hook'u import et
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-  });
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false); // İşlem uzun sürebilir, butonu kitleyelim
-
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  // Form elemanlarını tek yerden yönetelim
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      console.log("Anahtarlar üretiliyor...");
-      const {publicKey, privateKey} = await cryptoService.generateKeyPair();
-      const encryptedPrivateKey = cryptoService.encryptPrivateKey(privateKey, formData.password)
-      console.log("Anahtarlar hazır!");
-
-      await authService.register(
-        formData.username,
-        formData.email,
-        formData.password,
-        publicKey,
-        encryptedPrivateKey
-      );
-
-      const loginData = await authService.login(
-        formData.email,
-        formData.password
-      );
-
-      localStorage.setItem("privateKey", privateKey);
-      
-      const userData = {
-        _id: loginData.userId,
-        email: formData.email,
-        username: loginData.userName,
-        publicKey: loginData.publicKey
-      };
-
-      login(userData, loginData.token);
-      navigate("/chat");
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.error || "Kayıt işlemi başarısız!");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { formData, handleChange, error, isLoading, handleRegister } = useRegister();
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="mb-6 text-2xl font-bold text-center text-gray-800">
-          ChatTalk Kayıt
-        </h2>
+        <h2 className="mb-6 text-2xl font-bold text-center text-gray-800">ChatTalk Kayıt</h2>
 
-        {error && (
-          <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">
-            {error}
-          </div>
-        )}
+        {error && <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">{error}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleRegister}>
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-bold text-gray-700">
-              Kullanıcı Adı
-            </label>
+            <label className="block mb-2 text-sm font-bold text-gray-700">Kullanıcı Adı</label>
             <input
               name="username"
               type="text"
@@ -93,9 +25,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-bold text-gray-700">
-              E-posta
-            </label>
+            <label className="block mb-2 text-sm font-bold text-gray-700">E-posta</label>
             <input
               name="email"
               type="email"
@@ -107,9 +37,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-6">
-            <label className="block mb-2 text-sm font-bold text-gray-700">
-              Şifre
-            </label>
+            <label className="block mb-2 text-sm font-bold text-gray-700">Şifre</label>
             <input
               name="password"
               type="password"
@@ -122,14 +50,12 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className={`w-full px-4 py-2 font-bold text-white rounded focus:outline-none ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-700"
+              isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-500 hover:bg-green-700"
             }`}
           >
-            {loading ? "Anahtarlar Oluşturuluyor..." : "Kayıt Ol"}
+            {isLoading ? "Anahtarlar Oluşturuluyor..." : "Kayıt Ol"}
           </button>
         </form>
 
