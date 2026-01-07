@@ -4,51 +4,40 @@ import CryptoJS from "crypto-js";
 const cryptoService = {
   generateKeyPair: async () => {
     return new Promise((resolve, reject) => {
-      forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 2 },(err, keypair) => {
+      forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 2 }, (err, keypair) => {
+        if (err) return reject(err);
 
-          if (err) return reject(err);
+        const publicKeyPem = forge.pki.publicKeyToPem(keypair.publicKey);
+        const privateKeyPem = forge.pki.privateKeyToPem(keypair.privateKey);
 
-          const publicKeyPem = forge.pki.publicKeyToPem(keypair.publicKey);
-          const privateKeyPem = forge.pki.privateKeyToPem(keypair.privateKey);
-
-          resolve({ publicKey: publicKeyPem, privateKey: privateKeyPem });
-        }
-      );
+        resolve({ publicKey: publicKeyPem, privateKey: privateKeyPem });
+      });
     });
   },
 
-  
   encrypt: (message, publicKeyPem) => {
     try {
-
       const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
-      const encrypted = publicKey.encrypt(forge.util.encodeUtf8(message),"RSA-OAEP");
+      const encrypted = publicKey.encrypt(forge.util.encodeUtf8(message), "RSA-OAEP");
 
       return forge.util.encode64(encrypted);
-
     } catch (error) {
-
       console.error("encrypt error:", error);
       return null;
-
     }
   },
 
   decrypt: (encryptedMessageBase64, privateKeyPem) => {
     try {
-
       const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
 
       const encrypted = forge.util.decode64(encryptedMessageBase64);
 
       const decrypted = privateKey.decrypt(encrypted, "RSA-OAEP");
       return forge.util.decodeUtf8(decrypted);
-
     } catch (error) {
-
       console.error("decrypt error:", error);
       return " Bu mesaj çözülemedi (Anahtar hatası).";
-
     }
   },
   encryptPrivateKey: (privateKeyPem, password) => {
@@ -57,18 +46,15 @@ const cryptoService = {
 
   decryptPrivateKey: (encryptedPrivateKey, password) => {
     try {
-      
       const bytes = CryptoJS.AES.decrypt(encryptedPrivateKey, password);
       const originalKey = bytes.toString(CryptoJS.enc.Utf8);
       if (!originalKey.startsWith("-----BEGIN RSA")) return null; // Yanlış şifre kontrolü
       return originalKey;
-
     } catch (error) {
-      console.error("validation error", error)
+      console.error("validation error", error);
       return null;
     }
-  }
-  
+  },
 };
 
 export default cryptoService;

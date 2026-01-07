@@ -53,13 +53,5 @@ export const useLogin = () => {
     }
   };
 
-  return {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    error,
-    isLoading,
-    handleLogin,
-  };
+  return { email, setEmail, password, setPassword, error, isLoading, handleLogin,};
 };

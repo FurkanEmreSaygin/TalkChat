@@ -15,10 +15,10 @@ export default function RegisterPage() {
           <div className="mb-4">
             <label className="block mb-2 text-sm font-bold text-gray-700">Kullanıcı Adı</label>
             <input
-              name="username"
+              name="userName"
               type="text"
               className="w-full px-3 py-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.username}
+              value={formData.userName}
               onChange={handleChange}
               required
             />

@@ -4,13 +4,16 @@ const userRepository = require("../repositories/userRepository");
 
 class AuthService {
   async register(userData) {
-    const { username, email, password, phoneNumber, profilePic, publicKey, encryptedPrivateKey } = userData;
-
+    const { userName, email, password, phoneNumber, profilePic, publicKey, encryptedPrivateKey } = userData;
+    const existingUser = await userRepository.findUserByEmail(email);
+    if (existingUser) {
+      throw new Error("Email already in use");
+    }
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(password, salt);
 
     await userRepository.createUser({
-      userName: username,
+      userName: userName,
       email: email,
       password: hashedPassword,
       phoneNumber: phoneNumber || "",

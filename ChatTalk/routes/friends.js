@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 const friendController = require("../controllers/friendController");
 const authMiddleware = require("../middlewares/auth");
+const validate = require("../middlewares/validate");
+const { friendRequestSchema, acceptFriendSchema } = require("../schemas/friendSchema");
+
 router.use(authMiddleware);
 
-// Rotalar
-router.get("/search", friendController.searchUsers); 
-router.post("/request", friendController.sendFriendRequest); 
-router.post("/accept", friendController.acceptFriendRequest); 
+router.get("/search", friendController.searchUsers);
+router.post("/request", validate(friendRequestSchema), friendController.sendFriendRequest);
+router.post("/accept", validate(acceptFriendSchema), friendController.acceptFriendRequest);
 router.get("/requests", friendController.getFriendRequests);
-router.get("/list", friendController.getFriends); 
+router.get("/list", friendController.getFriends);
 
 module.exports = router;

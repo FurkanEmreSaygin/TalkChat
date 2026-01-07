@@ -111,18 +111,18 @@ export const useChat = (socket, currentUser, selectedUser) => {
 
     try {
       const service = type === "image" ? hybridCryptoService : cryptoService;
-
-      const encryptedForMe = service.encrypt(contentToEncrypt, currentUser.publicKey);
       const encryptedForRecipient = service.encrypt(contentToEncrypt, selectedUser.publicKey);
+      const encryptedForMe = service.encrypt(contentToEncrypt, currentUser.publicKey);
 
       if (!encryptedForMe || !encryptedForRecipient) throw new Error("Şifreleme başarısız");
 
-      socket.emit("sendMessage", {
+      await messageService.sendMessage({
         recipientId: selectedUser._id,
-        content: encryptedForRecipient,
-        senderContent: encryptedForMe,
+        content: encryptedForRecipient, 
+        senderContent: encryptedForMe, 
         type: type,
       });
+
 
       const optimisticMessage = {
         _id: Date.now(),
@@ -140,7 +140,7 @@ export const useChat = (socket, currentUser, selectedUser) => {
     }
   };
 
-  // --- 4. OTOMATİK OKUNDU İŞARETLEME (EKSİK OLAN KISIM) ---
+  // --- 4. OTOMATİK OKUNDU İŞARETLEME ---
   useEffect(() => {
     if (!socket || !selectedUser || messages.length === 0) return;
 

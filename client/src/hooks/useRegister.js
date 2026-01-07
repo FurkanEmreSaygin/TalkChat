@@ -6,7 +6,7 @@ import cryptoService from "../services/cryptoService";
 
 export const useRegister = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    userName: "",
     email: "",
     password: "",
   });
@@ -34,7 +34,7 @@ export const useRegister = () => {
       const encryptedPrivateKey = cryptoService.encryptPrivateKey(privateKey, formData.password);
 
       // 3. Sunucuya Kayıt Ol (Public Key ve Şifreli Private Key'i gönder)
-      await authService.register(formData.username, formData.email, formData.password, publicKey, encryptedPrivateKey);
+      await authService.register(formData.userName, formData.email, formData.password, publicKey, encryptedPrivateKey);
 
       // 4. Otomatik Giriş Yap
       const loginData = await authService.login(formData.email, formData.password);
@@ -45,7 +45,7 @@ export const useRegister = () => {
       const userData = {
         _id: loginData.userId,
         email: formData.email,
-        username: loginData.userName,
+        userName: loginData.userName,
         publicKey: loginData.publicKey,
       };
 
