@@ -2,8 +2,6 @@ import { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { SocketContext } from "../context/SocketContext";
 import { useChat } from "../hooks/useChat";
-import { useFriends } from "../hooks/useFriends";
-
 import Sidebar from "../components/chat/Sidebar";
 import MessageInput from "../components/chat/MessageInput";
 import MessageBubble from "../components/chat/MessageBubble";
@@ -12,14 +10,13 @@ export default function ChatPage() {
   const { user, logout } = useContext(AuthContext);
   const { socket } = useContext(SocketContext);
 
-  const [selectedUser, setSelectedUser] = useState(null);
+  // Artık sadece "User" değil, genel "Chat" (Grup veya Kişi) tutuyoruz
+  const [selectedChat, setSelectedChat] = useState(null);
+
   const messagesEndRef = useRef(null);
 
-  // --- 1. ARKADAŞLARI VE İSTEKLERİ YÖNETEN HOOK ---
-  const { users, onlineUsers, pendingRequests, loadFriends, acceptRequest } = useFriends(user, socket);
-
-  // --- 2. MESAJLAŞMAYI YÖNETEN HOOK ---
-  const { messages, sendMessage } = useChat(socket, user, selectedUser);
+  // Mesajlaşma Hook'u
+  const { messages, sendMessage, loading } = useChat(socket, user, selectedChat);
 
   // Otomatik Scroll
   useEffect(() => {
@@ -27,65 +24,75 @@ export default function ChatPage() {
   }, [messages]);
 
   // Yardımcılar
-  const getAvatar = (u) => u?.profilePic || u?.avatar;
-  const getName = (u) => u?.userName || u?.username || "User";
+  const getChatName = (chat) => chat?.name || chat?.userName || "Sohbet";
+
+  const getChatImage = (chat) => {
+    if (!chat) return null;
+    return chat.profilePic || chat.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${getChatName(chat)}`;
+  };
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* SOL TARAF */}
-      <Sidebar
-        currentUser={user}
-        users={users}
-        onlineUsers={onlineUsers}
-        pendingRequests={pendingRequests}
-        onAcceptRequest={acceptRequest}
-        selectedUser={selectedUser}
-        onSelectUser={setSelectedUser}
-        onLogout={logout}
-        onFriendAdded={loadFriends}
-      />
+      {/* SOL TARAF (SIDEBAR) */}
+      {/* FIX: onSelectChat prop'unu doğru isimlendirdik */}
+      <Sidebar currentUser={user} onSelectChat={(chat) => setSelectedChat(chat)} onLogout={logout} />
 
-      {/* SAĞ TARAF */}
+      {/* SAĞ TARAF (CHAT AREA) */}
       <div className="flex-1 flex flex-col h-full relative">
-        {selectedUser ? (
+        {selectedChat ? (
           <>
-            {/* Header */}
+            {/* HEADER */}
             <div className="p-4 bg-white border-b shadow-sm flex items-center shrink-0 z-10">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold mr-3 text-lg overflow-hidden border border-indigo-200">
-                {getAvatar(selectedUser) ? (
-                  <img src={getAvatar(selectedUser)} alt="User" className="w-full h-full object-cover" />
-                ) : (
-                  getName(selectedUser)[0].toUpperCase()
-                )}
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3 border overflow-hidden">
+                <img src={getChatImage(selectedChat)} className="w-full h-full object-cover" alt="chat-avatar" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-800">{getName(selectedUser)}</h2>
-                <div className="flex items-center text-xs text-green-600 font-medium">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  Uçtan Uca Şifreli
+                <h2 className="text-lg font-bold text-gray-800">{getChatName(selectedChat)}</h2>
+
+                <div className={`flex items-center text-xs font-medium ${selectedChat.isGroup ? "text-indigo-500" : "text-green-600"}`}>
+                  {selectedChat.isGroup ? (
+                    <span>Grup Sohbeti • {selectedChat.members?.length || 0} Üye</span>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                      Uçtan Uca Şifreli
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Mesajlar */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#efeae2]">
-              {messages.map((msg, index) => (
-                <MessageBubble key={index} message={msg} isMe={msg.sender === user._id} />
-              ))}
+            {/* MESAJ LİSTESİ */}
+            <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] flex flex-col gap-2 custom-scrollbar">
+              {loading ? (
+                <div className="text-center mt-10 text-gray-400">Yükleniyor...</div>
+              ) : messages.length === 0 ? (
+                <div className="text-center mt-10 text-gray-400 opacity-60">
+                  <p>Henüz mesaj yok. İlk mesajı sen at!</p>
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  // Sender kontrolü (Object veya String ID gelebilir)
+                  const senderId = msg.sender?._id || msg.sender;
+                  const isMe = senderId === user._id;
+
+                  return <MessageBubble key={index} message={msg} isMe={isMe} isGroup={selectedChat.isGroup} />;
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
+            {/* INPUT ALANI */}
             <MessageInput onSendMessage={sendMessage} />
           </>
         ) : (
-          /* Boş Ekran */
+          /* BOŞ EKRAN */
           <div className="flex flex-col items-center justify-center h-full text-gray-500 bg-gray-50">
             <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
               <span className="text-4xl">🔒</span>
             </div>
             <h3 className="text-2xl font-bold text-gray-700">Güvenli Sohbet</h3>
-            <p className="mt-2 text-sm text-gray-400">Mesajlaşmaya başlamak için soldan bir kişi seç.</p>
+            <p className="mt-2 text-sm text-gray-400">Mesajlaşmaya başlamak için soldan bir kişi veya grup seç.</p>
           </div>
         )}
       </div>

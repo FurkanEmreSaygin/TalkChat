@@ -12,5 +12,6 @@ router.post("/request", validate(friendRequestSchema), friendController.sendFrie
 router.post("/accept", validate(acceptFriendSchema), friendController.acceptFriendRequest);
 router.get("/requests", friendController.getFriendRequests);
 router.get("/list", friendController.getFriends);
+router.post("/remove-friend", friendController.removeFriend);
 
 module.exports = router;

@@ -1,73 +1,81 @@
 import React from "react";
-import toast from "react-hot-toast";
 
-const MessageBubble = ({ message, isMe }) => {
-  // Mesajın resim olup olmadığını kontrol et
-  const isImage = message.type === "image";
+export default function MessageBubble({ message, isMe, isGroup }) {
+  const alignClass = isMe ? "justify-end" : "justify-start";
 
-  // Tarih formatlama (Saat:Dakika)
-  const formatTime = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const bgClass = isMe ? "bg-green-100 text-gray-800 rounded-tr-none" : "bg-white border text-gray-800 rounded-tl-none";
 
-  // Metni kopyalama özelliği (Opsiyonel ama kullanışlı)
-  const handleCopy = () => {
-    if (message.content && !message.content.startsWith("⚠️")) {
-      navigator.clipboard.writeText(message.content);
-      toast.success("Kopyalandı");
-    }
-  };
+  const senderName = message.sender?.userName || "Kullanıcı";
+  const senderPic = message.sender?.profilePic || message.sender?.avatar;
+  const avatarUrl = senderPic || `https://api.dicebear.com/9.x/avataaars/svg?seed=${senderName}`;
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2 animate-fade-in`}>
-      <div
-        className={`relative max-w-[70%] p-3 rounded-lg shadow-sm ${
-          isMe
-            ? "bg-green-100 text-gray-800 rounded-tr-none" // Benim mesajım (Yeşil)
-            : "bg-white text-gray-800 rounded-tl-none" // Karşı taraf (Beyaz)
-        }`}
-      >
-        {/* --- İÇERİK ALANI --- */}
-        {isImage ? (
-          // EĞER RESİMSE
-          message.content && !message.content.startsWith("⚠️") ? (
+    <div className={`flex ${alignClass} mb-3 group`}>
+      {/* GRUP SOHBETİ İÇİN SOLDAKİ AVATAR (Sadece Karşıdan Gelen Mesajsa) */}
+      {!isMe && isGroup && (
+        <div className="flex flex-col justify-end mr-2">
+          <img src={avatarUrl} className="w-8 h-8 rounded-full border shadow-sm object-cover mb-1" alt="avatar" title={senderName} />
+        </div>
+      )}
+
+      {/* MESAJ KUTUSU */}
+      <div className={`max-w-[70%] min-w-[100px] rounded-2xl p-3 shadow-sm relative ${bgClass}`}>
+        {/* Grup içindeyse ve mesaj başkasındansa İSİM yaz */}
+        {!isMe && isGroup && <p className="text-xs font-bold text-orange-600 mb-1 select-none">{senderName}</p>}
+
+        {/* İÇERİK (Resim veya Yazı) */}
+        {message.type === "image" ? (
+          <div className="relative">
             <img
               src={message.content}
-              alt="Encrypted Content"
-              className="rounded-lg max-h-60 w-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-              onClick={() => window.open(message.content)} // Tıklayınca tam boy aç
+              alt="Gönderilen resim"
+              className="rounded-lg max-h-60 object-cover cursor-pointer hover:opacity-90 transition"
+              onClick={() => window.open(message.content, "_blank")}
             />
-          ) : (
-            // RESİM ÇÖZÜLEMEDİYSE
-            <div className="flex items-center gap-2 text-red-500 bg-red-50 p-2 rounded border border-red-100">
-              <span>⚠️</span>
-              <span className="text-xs font-bold">Resim Çözülemedi</span>
-            </div>
-          )
+          </div>
         ) : (
-          // EĞER METİNSE
-          <p className="text-sm break-words leading-relaxed cursor-pointer" onClick={handleCopy} title="Kopyalamak için tıkla">
-            {message.content}
-          </p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
         )}
 
-        {/* --- TARİH VE TİK --- */}
-        <div className="text-[10px] text-gray-500 text-right mt-1 flex items-center justify-end gap-1 select-none">
-          <span>{formatTime(message.createdAt)}</span>
+        {/* SAAT ve DURUM İKONLARI */}
+        <div className="flex justify-end items-center mt-1 space-x-1 select-none opacity-70">
+          <span className="text-[10px] text-gray-500">
+            {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
 
           {/* Sadece benim mesajlarımda tik göster */}
           {isMe && (
-            <span>
+            <span className={message.isRead ? "text-blue-500" : "text-gray-400"}>
               {message.isRead ? (
-                // Mavi Çift Tik (Okundu)
-                <span className="text-blue-500 text-xs font-bold">✓✓</span>
+                // Çift Tik (Okundu)
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6L7 17l-5-5" />
+                  <path d="m22 10-7.5 7.5L13 16" />
+                </svg>
               ) : (
-                // Gri Tik (İletildi)
-                <span className="text-gray-400 text-xs font-bold">✓</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               )}
             </span>
           )}
@@ -75,6 +83,4 @@ const MessageBubble = ({ message, isMe }) => {
       </div>
     </div>
   );
-};
-
-export default MessageBubble;
+}

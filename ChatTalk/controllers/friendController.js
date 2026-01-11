@@ -67,3 +67,17 @@ exports.getFriends = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// ARKADAŞ SİLME
+exports.removeFriend = async (req, res) => {
+  try {
+    const { friendId } = req.body;
+    const userId = req.user.userId;
+
+    await friendService.deleteFriend(userId, friendId);
+
+    res.status(200).json({ success: true, message: "Arkadaş silindi." });
+  } catch (error) {
+    console.error("Remove Friend Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};

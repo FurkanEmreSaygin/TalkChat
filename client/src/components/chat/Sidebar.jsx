@@ -1,11 +1,34 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useContext } from "react";
+import { useFriends } from "../../hooks/useFriends";
+import { useGroups } from "../../hooks/useGroups";
 import AddFriendModal from "./AddFriendModal";
+import CreateGroupModal from "./CreateGroupModal";
+import { AuthContext } from "../../context/AuthContext";
+import { Users, UserPlus, MessageSquare, LogOut, Trash2 } from "lucide-react";
 
-const Sidebar = ({ currentUser, users, pendingRequests, onlineUsers, selectedUser, onSelectUser, onLogout, onFriendAdded, onAcceptRequest }) => {
-  const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function Sidebar({ onSelectChat, currentUser }) {
+  const {
+    users: friends,
+    pendingRequests,
+    acceptRequest,
+    loadData,
+    onlineUsers, 
+    removeFriend,
+  } = useFriends(currentUser);
 
+  const { logout } = useContext(AuthContext);
+  const { groups, createGroup, loadGroups } = useGroups();
+
+  // State'ler
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isFriendModalOpen, setIsFriendModalOpen] = useState(false);
+
+  // Sohbet Seçme Fonksiyonu
+  const handleSelect = (item, type) => {
+    onSelectChat({ ...item, isGroup: type === "group" });
+  };
+
+  // Yardımcılar
   const getAvatar = (u) => {
     const pic = u?.profilePic || u?.avatar;
     if (!pic || (typeof pic === "string" && pic.includes("undefined"))) return null;
@@ -13,48 +36,71 @@ const Sidebar = ({ currentUser, users, pendingRequests, onlineUsers, selectedUse
   };
 
   const getName = (u) => u?.userName || u?.username || "User";
-  const getInitial = (u) => getName(u)?.[0]?.toUpperCase() || "?";
 
   return (
-    <div className="w-1/3 bg-white border-r border-gray-300 flex flex-col h-full relative">
-      <AddFriendModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onFriendAdded={onFriendAdded} />
+    <div className="w-1/3 bg-white border-r border-gray-300 flex flex-col h-full relative z-20">
+      {/* --- MODALLAR --- */}
+      <AddFriendModal
+        isOpen={isFriendModalOpen}
+        onClose={() => setIsFriendModalOpen(false)}
+        onFriendAdded={() => {
+          loadData();
+          setIsFriendModalOpen(false);
+        }}
+      />
+
+      {isGroupModalOpen && (
+        <CreateGroupModal
+          onClose={() => setIsGroupModalOpen(false)}
+          friends={friends}
+          onCreate={async (name, selected) => {
+            await createGroup(name, selected);
+            loadGroups();
+          }}
+        />
+      )}
 
       {/* --- HEADER --- */}
-      <div className="p-4 bg-gray-50 border-b flex justify-between items-center shrink-0 shadow-sm z-10">
-        <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate("/profile")}>
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3 overflow-hidden border border-blue-600 relative shrink-0">
+      <div className="p-4 bg-gray-50 border-b flex justify-between items-center shrink-0 shadow-sm">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold border border-blue-700 shrink-0">
             {getAvatar(currentUser) ? (
-              <img src={getAvatar(currentUser)} alt="Me" className="w-full h-full object-cover" />
+              <img src={getAvatar(currentUser)} alt="Me" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <span className="text-lg">{getInitial(currentUser)}</span>
+              <span>{getName(currentUser)?.[0]?.toUpperCase()}</span>
             )}
           </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold text-gray-700 leading-tight truncate">{getName(currentUser)}</span>
-            <span className="text-[10px] text-gray-400">Profili Düzenle</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-700 truncate max-w-[120px]">{getName(currentUser)}</span>
+            <span className="text-[10px] text-green-600 font-medium">● Çevrimiçi</span>
           </div>
+          <button onClick={logout} title="Çıkış" className="text-red-500 hover:bg-red-50 p-2 rounded-full transition">
+            <LogOut size={18} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm"
+            onClick={() => setIsGroupModalOpen(true)}
+            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition"
+            title="Grup Oluştur"
+          >
+            <Users size={18} className="text-gray-600" />
+          </button>
+
+          <button
+            onClick={() => setIsFriendModalOpen(true)}
+            className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition shadow-sm"
             title="Arkadaş Ekle"
           >
-            <span className="font-bold text-lg pb-1">+</span>
-          </button>
-          <button
-            onClick={onLogout}
-            className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 px-2 py-1 rounded hover:bg-red-50 transition-colors shrink-0"
-          >
-            Çıkış
+            <UserPlus size={18} />
           </button>
         </div>
       </div>
 
-      {/* --- LİSTE ALANI --- */}
+      {/* --- LİSTELER (Scrollable) --- */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* YENİ BÖLÜM: BEKLEYEN İSTEKLER (Varsa Göster) */}
+        {/* 1. BEKLEYEN İSTEKLER */}
         {pendingRequests && pendingRequests.length > 0 && (
           <div className="mb-2 border-b border-orange-100 bg-orange-50">
             <h3 className="text-xs font-bold text-orange-600 px-4 py-2 uppercase tracking-wide">
@@ -63,22 +109,21 @@ const Sidebar = ({ currentUser, users, pendingRequests, onlineUsers, selectedUse
             {pendingRequests.map((req) => (
               <div
                 key={req._id}
-                className="flex items-center justify-between px-4 py-3 hover:bg-orange-100 transition-colors border-b border-orange-100 last:border-0"
+                className="flex items-center justify-between px-4 py-3 hover:bg-orange-100 border-b border-orange-100 last:border-0"
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-700 font-bold shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-700 font-bold shrink-0">
                     {getAvatar(req.sender) ? (
-                      <img src={getAvatar(req.sender)} alt="Sender" className="w-full h-full object-cover" />
+                      <img src={getAvatar(req.sender)} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      getInitial(req.sender)
+                      getName(req.sender)?.[0]
                     )}
                   </div>
                   <span className="text-sm font-semibold text-gray-700 truncate">{getName(req.sender)}</span>
                 </div>
-                {/* KABUL ET BUTONU */}
                 <button
-                  onClick={() => onAcceptRequest(req._id)}
-                  className="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-full hover:bg-orange-600 font-medium shadow-sm active:scale-95 transition-all"
+                  onClick={() => acceptRequest(req._id)}
+                  className="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-full hover:bg-orange-600 transition"
                 >
                   Kabul Et
                 </button>
@@ -87,51 +132,87 @@ const Sidebar = ({ currentUser, users, pendingRequests, onlineUsers, selectedUse
           </div>
         )}
 
-        {/* --- MEVCUT ARKADAŞLAR --- */}
-        <div className="p-2">
-          {users.length === 0 && pendingRequests.length === 0 && (
-            <div className="text-center text-gray-400 text-sm mt-10">
-              Henüz kimse yok :( <br /> Yukarıdan arkadaş ekleyebilirsin.
-            </div>
-          )}
+        {/* 2. GRUPLAR LİSTESİ */}
+        {groups.length > 0 && <div className="px-4 py-2 bg-gray-100 text-xs font-bold text-gray-500 mt-2 border-y">GRUPLAR</div>}
 
-          {users.map((u) => {
-            const isOnline = onlineUsers?.includes(u._id);
+        {groups.map((group) => (
+          <div
+            key={group._id}
+            onClick={() => handleSelect(group, "group")}
+            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b transition"
+          >
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3 text-indigo-600 font-bold border border-indigo-200 shrink-0">
+              {group.profilePic ? (
+                <img src={group.profilePic} alt={group.name} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <Users size={20} />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-gray-800 truncate">{group.name}</h3>
+              <p className="text-xs text-gray-500 truncate">{group.members?.length} üye • Grup</p>
+            </div>
+          </div>
+        ))}
+
+        {/* 3. ARKADAŞLAR LİSTESİ */}
+        <div className="px-4 py-2 bg-gray-100 text-xs font-bold text-gray-500 mt-2 border-y">ARKADAŞLAR ({friends?.length || 0})</div>
+
+        {Array.isArray(friends) &&
+          friends.map((friend) => {
+            // DÜZELTME BURADA: Döngü içinde her arkadaş için kontrol yapıyoruz
+            // onlineUsers listesinde bu arkadaşın ID'si var mı?
+            const isUserOnline = onlineUsers.includes(friend._id);
+
             return (
-              <div
-                key={u._id}
-                onClick={() => onSelectUser(u)}
-                className={`flex items-center p-3 mb-2 rounded-lg cursor-pointer transition-colors relative group ${
-                  selectedUser?._id === u._id
-                    ? "bg-blue-100 border-l-4 border-blue-500 shadow-sm"
-                    : "hover:bg-gray-100 border-l-4 border-transparent"
-                }`}
-              >
-                <div className="relative mr-3 shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold overflow-hidden border border-gray-300">
-                    {getAvatar(u) ? (
-                      <img src={getAvatar(u)} alt={getName(u)} className="w-full h-full object-cover" />
+              <div key={friend._id} className="flex items-center p-3 hover:bg-gray-50 border-b transition group relative">
+                <div className="flex items-center flex-1 cursor-pointer" onClick={() => handleSelect(friend, "user")}>
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 shrink-0 relative border">
+                    {getAvatar(friend) ? (
+                      <img src={getAvatar(friend)} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-xl">{getInitial(u)}</span>
+                      getName(friend)?.[0]
+                    )}
+
+                    {/* DÜZELTME: isUserOnline değişkenini kullanıyoruz */}
+                    {isUserOnline && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                     )}
                   </div>
-                  {isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
-                  )}
+
+                  <div>
+                    <h3 className="font-medium text-gray-800">{getName(friend)}</h3>
+                    {/* DÜZELTME: isUserOnline değişkenini kullanıyoruz */}
+                    <p className={`text-xs ${isUserOnline ? "text-green-600 font-bold" : "text-gray-400"}`}>
+                      {isUserOnline ? "Çevrimiçi" : "Çevrimdışı"}
+                    </p>
+                  </div>
                 </div>
-                <div className="overflow-hidden">
-                  <h3 className="text-sm font-semibold text-gray-800 truncate">{getName(u)}</h3>
-                  <p className={`text-xs ${isOnline ? "text-green-600 font-medium" : "text-gray-400"}`}>
-                    {isOnline ? "Çevrimiçi" : "Çevrimdışı"}
-                  </p>
-                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFriend(friend._id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition"
+                  title="Arkadaşı Sil"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             );
           })}
-        </div>
+
+        {/* BOŞ DURUM */}
+        {friends.length === 0 && groups.length === 0 && (
+          <div className="text-center text-gray-400 mt-10 p-4">
+            <MessageSquare size={40} className="mx-auto mb-2 opacity-20" />
+            <p className="text-sm">Henüz sohbet yok.</p>
+            <p className="text-xs mt-1">Yeni bir arkadaş ekleyerek veya grup kurarak başla.</p>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Sidebar;
+}
