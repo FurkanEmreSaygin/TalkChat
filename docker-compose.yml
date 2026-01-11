@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # --- 1. MONGODB SERVİSİ ---
+  mongo:
+    image: mongo:latest
+    container_name: chattalk_db
+    ports:
+      - "27017:27017" # Bilgisayarından erişmek istersen diye
+    volumes:
+      - mongo-data:/data/db # Veriler silinmesin diye yedekle
+    networks:
+      - mern-network
+
+  # --- 2. BACKEND SERVİSİ ---
+  api:
+    build: ./server
+    container_name: chattalk_api
+    ports:
+      - "5000:5000"
+    environment:
+      # DİKKAT: Docker içinde 'localhost' kendi hücresidir.
+      # MongoDB'ye ulaşmak için servis adı olan 'mongo'yu kullanırız.
+      - MONGO_URI=mongodb://mongo:27017/chattalk
+      - PORT=5000
+      # Diğer gizli anahtarlarını server/.env dosyasından okuyacak
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongo # DB açılmadan Backend açılmasın
+    networks:
+      - mern-network
+
+  # --- 3. FRONTEND SERVİSİ ---
+  client:
+    build: ./client
+    container_name: chattalk_client
+    ports:
+      - "5173:5173"
+    environment:
+      # Frontend tarayıcıda çalıştığı için localhost'a erişebilir
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - api
+    networks:
+      - mern-network
+
+# --- AĞ VE DEPOLAMA AYARLARI ---
+networks:
+  mern-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
