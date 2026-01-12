@@ -1,32 +1,47 @@
 import { createContext, useState, useEffect, useContext } from "react";
-import { io } from "socket.io-client";
+import io from "socket.io-client";
 import { AuthContext } from "./AuthContext";
 
 export const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext); 
+
   useEffect(() => {
-    if (user && token) {
-      const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-        auth: { token: token },
+    // 1. Kullanıcı varsa bağlan
+    if (user) {
+      const token = localStorage.getItem("token"); 
+
+      const newSocket = io("http://localhost:5000", {
+        auth: {
+          token: token,
+        },
+        reconnection: true, 
+        reconnectionAttempts: 5,
+      });
+
+      newSocket.on("connect", () => {
+        console.log("🟢 Socket Bağlandı! ID:", newSocket.id);
+      });
+
+      newSocket.on("connect_error", (err) => {
+        console.error("🔴 Socket Bağlantı Hatası:", err.message);
       });
 
       setSocket(newSocket);
 
-      return () => newSocket.close();
+      return () => {
+        newSocket.close();
+        console.log("Socket Kapatıldı.");
+      };
     } else {
       if (socket) {
         socket.close();
         setSocket(null);
       }
     }
-  }, [user, token]);
+  }, [user]); 
 
-  return (
-    <SocketContext.Provider value={{ socket }}>
-      {children}
-    </SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={{ socket }}>{children}</SocketContext.Provider>;
 };

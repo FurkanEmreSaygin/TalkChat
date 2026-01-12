@@ -32,6 +32,10 @@ class MessageRepository {
   async markAsRead(senderId, recipientId) {
     return await Message.updateMany({ sender: senderId, recipient: recipientId, isRead: false }, { $set: { isRead: true } });
   }
+
+  async countUnreadMessages(senderId, recipientId) {
+    return await Message.countDocuments({ sender: senderId, recipient: recipientId, isRead: false });
+  }
 }
 
 module.exports = new MessageRepository();

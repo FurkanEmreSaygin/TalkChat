@@ -35,7 +35,7 @@ export default function ChatPage() {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SOL TARAF (SIDEBAR) */}
       {/* FIX: onSelectChat prop'unu doğru isimlendirdik */}
-      <Sidebar currentUser={user} onSelectChat={(chat) => setSelectedChat(chat)} onLogout={logout} />
+      <Sidebar currentUser={user} onSelectChat={(chat) => setSelectedChat(chat)} selectedChat={selectedChat} onLogout={logout} />
 
       {/* SAĞ TARAF (CHAT AREA) */}
       <div className="flex-1 flex flex-col h-full relative">

@@ -3,14 +3,25 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const helmet = require("helmet");
+const { globalLimiter } = require("./middlewares/rateLimiter");
+const mongoSanitize = require("express-mongo-sanitize");
+
 
 const cors = require("cors")
 const dotenv = require("dotenv");
-dotenv.config();
 const connectDB = require("./config/db");
+dotenv.config();
 connectDB();
 
 var app = express();
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+app.use("/api", globalLimiter);
+app.use(mongoSanitize());
 
 app.use(cors({
   origin: "http://localhost:5173", 
@@ -23,8 +34,8 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 

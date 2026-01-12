@@ -1,6 +1,6 @@
 const registerMessageHandlers = require("./socketServices/messageHandler");
 const registerFriendHandlers = require("./socketServices/friendHandler");
-const Group = require("../models/Groups"); // <--- YENİ: Group modelini ekledik
+const Group = require("../models/Groups");
 
 module.exports = (io) => {
   const onlineUsers = new Map();

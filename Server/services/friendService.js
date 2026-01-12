@@ -1,5 +1,6 @@
 const friendsRepository = require("../repositories/friendsRepository");
 const userRepository = require("../repositories/userRepository");
+const messageRepository = require("../repositories/messageRepository");
 
 class FriendService {
   async searchUsers(query, currentUserId) {
@@ -7,7 +8,6 @@ class FriendService {
     return await userRepository.searchUsers(query, currentUserId);
   }
   async deleteFriend(currentUserId, targetFriendId) {
-    // Gerekirse burada "Böyle bir arkadaş var mı?" kontrolü yapılabilir.
     return await friendsRepository.removeFriendship(currentUserId, targetFriendId);
   }
 
@@ -49,7 +49,14 @@ class FriendService {
   }
 
   async getFriends(userId) {
-    return await userRepository.getUserFriends(userId);
+    const friends = await userRepository.getUserFriends(userId);
+    if (!friends || friends.length === 0) return [];
+    const friendsWithCounts = await Promise.all(friends.map(async (friend)=>{
+      const friendObj = friend.toObject ? friend.toObject() : friend
+      const unreadCount = await messageRepository.countUnreadMessages(friendObj._id, userId);
+      return { ...friendObj, unreadCount };
+    }))
+    return friendsWithCounts;
   }
 }
 

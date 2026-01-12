@@ -120,11 +120,25 @@ export const useChat = (socket, currentUser, selectedChat) => {
       // Çift mesajı önle (Ben attıysam zaten ekranda var)
       if (message.sender === currentUser._id) return;
 
-      const isRelevant = message.sender === selectedChat._id || message.recipient === selectedChat._id;
+      let isRelevant = false;
+
+      if (selectedChat.isGroup) {
+        // --- SENARYO 1: GRUP SOHBETİNDEYİZ ---
+        if (message.recipient === selectedChat._id) {
+          isRelevant = true;
+        }
+      } else {
+        // --- SENARYO 2: 1'E 1 SOHBETTEYİZ ---
+        if (message.sender === selectedChat._id && message.recipient === currentUser._id) {
+          isRelevant = true;
+        }
+      }
 
       if (isRelevant) {
         const privateKey = localStorage.getItem("privateKey");
-        const decryptedText = decryptMessageContent(message, currentUser._id, privateKey, groupPrivateKey);
+        const groupKeyToUse = selectedChat.isGroup ? groupPrivateKey : null;
+
+        const decryptedText = decryptMessageContent(message, currentUser._id, privateKey, groupKeyToUse);
 
         setMessages((prev) => {
           if (prev.some((m) => m._id === message._id)) return prev;

@@ -3,24 +3,36 @@ import { useFriends } from "../../hooks/useFriends";
 import { useGroups } from "../../hooks/useGroups";
 import AddFriendModal from "./AddFriendModal";
 import CreateGroupModal from "./CreateGroupModal";
-import ProfileModal from "./ProfileModal"; // Profil modalı eklendi
+import ProfileModal from "./ProfileModal";
 import { AuthContext } from "../../context/AuthContext";
 import { Users, UserPlus, MessageSquare, LogOut, Trash2, Camera } from "lucide-react";
 
-export default function Sidebar({ onSelectChat, currentUser }) {
-  const { users: friends, pendingRequests, acceptRequest, loadData, onlineUsers, removeFriend } = useFriends(currentUser);
+export default function Sidebar({ onSelectChat, currentUser, selectedChat }) {
+  
+  const {
+    users: friends,
+    pendingRequests,
+    acceptRequest,
+    loadData,
+    onlineUsers,
+    removeFriend,
+    unreadCounts,
+    markMessagesAsRead,
+  } = useFriends(currentUser, selectedChat);
 
   const { logout } = useContext(AuthContext);
   const { groups, createGroup, loadGroups } = useGroups();
 
-  // Modallar için State'ler
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isFriendModalOpen, setIsFriendModalOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Sohbet Seçme Fonksiyonu
   const handleSelect = (item, type) => {
     onSelectChat({ ...item, isGroup: type === "group" });
+    if (type === "user") {
+      markMessagesAsRead(item._id);
+    }
   };
 
   // Yardımcılar
@@ -35,19 +47,16 @@ export default function Sidebar({ onSelectChat, currentUser }) {
   return (
     <div className="w-1/3 bg-white border-r border-gray-300 flex flex-col h-full relative z-20">
       {/* --- MODALLAR --- */}
-
-      {/* Profil Düzenleme Modalı */}
       {isProfileModalOpen && (
         <ProfileModal
           onClose={() => setIsProfileModalOpen(false)}
           onUpdate={() => {
-            setIsProfileModalOpen(false); 
-            loadData(); 
+            setIsProfileModalOpen(false);
+            loadData();
           }}
         />
       )}
 
-      {/* Arkadaş Ekleme Modalı */}
       <AddFriendModal
         isOpen={isFriendModalOpen}
         onClose={() => setIsFriendModalOpen(false)}
@@ -57,7 +66,6 @@ export default function Sidebar({ onSelectChat, currentUser }) {
         }}
       />
 
-      {/* Grup Oluşturma Modalı */}
       {isGroupModalOpen && (
         <CreateGroupModal
           onClose={() => setIsGroupModalOpen(false)}
@@ -71,7 +79,6 @@ export default function Sidebar({ onSelectChat, currentUser }) {
 
       {/* --- HEADER --- */}
       <div className="p-4 bg-gray-50 border-b flex justify-between items-center shrink-0 shadow-sm">
-        {/* Kullanıcı Profil Alanı - Tıklanabilir */}
         <div
           className="flex items-center gap-3 overflow-hidden cursor-pointer hover:bg-gray-100 p-1 rounded-lg transition-all group"
           onClick={() => setIsProfileModalOpen(true)}
@@ -83,7 +90,6 @@ export default function Sidebar({ onSelectChat, currentUser }) {
             ) : (
               <span>{getName(currentUser)?.[0]?.toUpperCase()}</span>
             )}
-            {/* Hover durumunda çıkan kamera ikonu */}
             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
               <Camera size={14} className="text-white" />
             </div>
@@ -94,25 +100,20 @@ export default function Sidebar({ onSelectChat, currentUser }) {
           </div>
         </div>
 
-        {/* Aksiyon Butonları */}
         <div className="flex gap-2">
           <button
             onClick={() => setIsGroupModalOpen(true)}
             className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition"
-            title="Grup Oluştur"
           >
             <Users size={18} className="text-gray-600" />
           </button>
-
           <button
             onClick={() => setIsFriendModalOpen(true)}
             className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition shadow-sm"
-            title="Arkadaş Ekle"
           >
             <UserPlus size={18} />
           </button>
-
-          <button onClick={logout} title="Çıkış Yap" className="text-red-500 hover:bg-red-50 p-2 rounded-full transition ml-1">
+          <button onClick={logout} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition ml-1">
             <LogOut size={18} />
           </button>
         </div>
@@ -154,7 +155,6 @@ export default function Sidebar({ onSelectChat, currentUser }) {
 
         {/* Gruplar */}
         {groups.length > 0 && <div className="px-4 py-2 bg-gray-100 text-xs font-bold text-gray-500 mt-2 border-y">GRUPLAR</div>}
-
         {groups.map((group) => (
           <div
             key={group._id}
@@ -180,28 +180,51 @@ export default function Sidebar({ onSelectChat, currentUser }) {
 
         {Array.isArray(friends) &&
           friends.map((friend) => {
-            const isUserOnline = onlineUsers.includes(friend._id);
+            const isOnline = onlineUsers.includes(friend._id);
+            // Okunmamış mesaj sayısı
+            const unreadCount = unreadCounts[friend._id] || 0;
+            // Şu an seçili olan bu mu?
+            const isSelected = selectedChat?._id === friend._id;
 
             return (
-              <div key={friend._id} className="flex items-center p-3 hover:bg-gray-50 border-b transition group relative">
-                <div className="flex items-center flex-1 cursor-pointer" onClick={() => handleSelect(friend, "user")}>
+              <div
+                key={friend._id}
+                onClick={() => handleSelect(friend, "user")}
+                className={`flex items-center p-3 border-b transition group relative cursor-pointer
+                  ${isSelected ? "bg-blue-50" : "hover:bg-gray-50"}
+                `}
+              >
+                {/* Avatar */}
+                <div className="flex items-center flex-1">
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 shrink-0 relative border">
                     {getAvatar(friend) ? (
                       <img src={getAvatar(friend)} className="w-full h-full rounded-full object-cover" />
                     ) : (
                       getName(friend)?.[0]
                     )}
-                    {isUserOnline && (
+                    {isOnline && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-medium text-gray-800">{getName(friend)}</h3>
-                    <p className={`text-xs ${isUserOnline ? "text-green-600 font-bold" : "text-gray-400"}`}>
-                      {isUserOnline ? "Çevrimiçi" : "Çevrimdışı"}
+
+                  {/* İsim ve Durum */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium text-gray-800 truncate">{getName(friend)}</h3>
+
+                      {/* --- KIRMIZI BALONCUK (Unread Badge) --- */}
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse ml-2">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-xs ${isOnline ? "text-green-600 font-bold" : "text-gray-400"}`}>
+                      {isOnline ? "Çevrimiçi" : "Çevrimdışı"}
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -221,7 +244,6 @@ export default function Sidebar({ onSelectChat, currentUser }) {
           <div className="text-center text-gray-400 mt-10 p-4">
             <MessageSquare size={40} className="mx-auto mb-2 opacity-20" />
             <p className="text-sm">Henüz sohbet yok.</p>
-            <p className="text-xs mt-1">Yeni bir arkadaş ekleyerek veya grup kurarak başla.</p>
           </div>
         )}
       </div>
