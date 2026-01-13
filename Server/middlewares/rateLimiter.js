@@ -22,10 +22,18 @@ const messageLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 dakika
   max: 60,
   message: {
-    error: "Çok hızlı mesaj gönderiyorsunuz! Biraz yavaşlayın 🚀",
+    error: "Çok hızlı mesaj gönderiyorsunuz! Biraz yavaşlayın ",
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-module.exports = { globalLimiter, authLimiter, messageLimiter };
+const searchLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 dakika
+  max: 30,
+  message: {
+    error: "Cok hizli kisi ariyorsunuz! Biraz yavaslayin ",
+  }
+})
+
+module.exports = { globalLimiter, authLimiter, messageLimiter, searchLimiter };

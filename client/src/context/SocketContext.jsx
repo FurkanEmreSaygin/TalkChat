@@ -12,12 +12,14 @@ export const SocketProvider = ({ children }) => {
     // 1. Kullanıcı varsa bağlan
     if (user) {
       const token = localStorage.getItem("token"); 
+      const socketURL = import.meta.env.VITE_SOCKET_URL || "/";
 
-      const newSocket = io("http://localhost:5000", {
+      const newSocket = io(socketURL, {
         auth: {
           token: token,
         },
-        reconnection: true, 
+        path: "/socket.io/",
+        reconnection: true,
         reconnectionAttempts: 5,
       });
 
