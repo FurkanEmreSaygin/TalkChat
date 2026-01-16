@@ -17,9 +17,10 @@ Proje; **Clean Code**, **Scalability (Ölçeklenebilirlik)** ve **DevOps** prens
 | ![](./screenshots/login.png) | ![](./screenshots/register.png) |
 
 ### Chat Interface
-| :---: | :---: |
-![](./screenshots/chat.png) | ![](./screenshots/chat2.png) |
 
+| Chat View | Conversation |
+| :---: | :---: |
+| ![](./screenshots/chat.png) | ![](./screenshots/chat2.png) |
 ---
 
 ## Architecture Overview
@@ -34,12 +35,12 @@ Proje, **3-Tier Architecture** prensibine göre tasarlanmıştır:
 
 ```mermaid
 graph TD
-    Client[Client (React + Vite)] -->|HTTP/WebSocket| Nginx[Nginx (Reverse Proxy)]
-    Nginx -->|/api| API[Node.js API Server]
+    Client["Client - React & Vite"] -->|HTTP / WebSocket| Nginx["Nginx - Reverse Proxy"]
+    Nginx -->|/api| API["Node.js API Server"]
     Nginx -->|/socket.io| API
-    API -->|Read/Write| DB[(MongoDB)]
-    
-    subgraph Docker Network
+    API -->|Read / Write| DB["MongoDB"]
+
+    subgraph Docker_Network
         Nginx
         API
         DB
