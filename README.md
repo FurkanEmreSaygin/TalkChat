@@ -118,8 +118,6 @@ server/
 - [ ] **Unit & Integration Tests:** Jest & Supertest test suites  
 - [ ] **CI/CD Pipeline:** GitHub Actions for automated testing & deployment  
 
-> This roadmap demonstrates the project’s scalability vision and long-term maintainability focus.
-
 ---
 
 ## Installation
